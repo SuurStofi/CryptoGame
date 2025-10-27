@@ -1,3 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Hide all wallets except Phantom in wallet modal */
+.wallet-adapter-modal-list li {
+  display: none !important;
+}
+
+/* Show only Phantom wallet */
+.wallet-adapter-modal-list li:first-child {
+  display: flex !important;
+}
+
+/* Hide the "More options" or additional wallet sections */
+.wallet-adapter-modal-collapse,
+.wallet-adapter-modal-middle {
+  display: none !important;
+}
+
+/* Ensure Phantom button is visible and styled correctly */
+.wallet-adapter-modal-list li:first-child button {
+  display: flex !important;
+}
