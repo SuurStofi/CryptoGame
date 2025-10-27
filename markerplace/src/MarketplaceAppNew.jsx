@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MessageCircle, ShoppingCart, User, Search, X, Send, LogOut, Package, Wallet } from 'lucide-react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { getAssociatedTokenAddress, createTransferInstruction, getAccount } from '@solana/spl-token';
 import bs58 from 'bs58';
 import { authAPI, tokensAPI, marketplaceAPI } from './api';
-import { TOKEN_NAMES, TOKEN_ICONS, TOKEN_TYPES, SOLANA_RPC_URL, API_BASE_URL } from './config';
+import { TOKEN_NAMES, TOKEN_ICONS, TOKEN_TYPES, API_BASE_URL } from './config';
 import appleJuiceImg from './img/apple_cocktail.png';
 import orangeJuiceImg from './img/orange_cocktail.png';
 import grapeSodaImg from './img/grape_cocktail.png';
@@ -18,7 +18,8 @@ const TOKEN_IMAGES = {
 };
 
 const MarketplaceApp = () => {
-  const { publicKey, signMessage, connected, disconnect } = useWallet();
+  const { connection } = useConnection();
+  const { publicKey, signMessage, connected, disconnect, sendTransaction } = useWallet();
   const [currentPage, setCurrentPage] = useState('marketplace');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -98,7 +99,6 @@ const MarketplaceApp = () => {
       setTokenBalances(balances);
       
       // Load SOL balance
-      const connection = new Connection(SOLANA_RPC_URL);
       const balance = await connection.getBalance(publicKey);
       setSolBalance(balance / LAMPORTS_PER_SOL);
       
@@ -213,7 +213,6 @@ const MarketplaceApp = () => {
       // Get transaction details
       const { transactionDetails } = await marketplaceAPI.initiateBuy(listing._id);
       
-      const connection = new Connection(SOLANA_RPC_URL);
       const transaction = new Transaction();
       
       // 1. Transfer SOL to seller
@@ -233,8 +232,8 @@ const MarketplaceApp = () => {
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
       
-      // Sign and send transaction
-      const { signature } = await window.solana.signAndSendTransaction(transaction);
+      // Sign and send transaction using wallet adapter
+      const signature = await sendTransaction(transaction, connection);
       
       // Wait for confirmation
       await connection.confirmTransaction(signature);
@@ -250,7 +249,7 @@ const MarketplaceApp = () => {
       
     } catch (error) {
       console.error('Error purchasing:', error);
-      setError(error.response?.data?.error || 'Error during purchase');
+      setError(error.response?.data?.error || error.message || 'Error during purchase');
     } finally {
       setLoading(false);
     }

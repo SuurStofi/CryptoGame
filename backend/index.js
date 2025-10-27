@@ -16,11 +16,14 @@ app.set('trust proxy', 1);
 connectDB();
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:8000',
+  process.env.FRONTEND_URL,
+];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL 
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:5174'],
-  credentials: true,
+  origin: '*',
+  credentials: true
 }));
 
 app.use(express.json());
@@ -55,6 +58,10 @@ app.get('/', (req, res) => {
       tokens: '/tokens',
       marketplace: '/marketplace',
       health: '/health',
+    },
+    tokenOperations: {
+      balance: 'GET /tokens/balance/:walletAddress',
+      mint: 'POST /tokens/mint',
     },
   });
 });
