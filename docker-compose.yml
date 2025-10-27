@@ -23,22 +23,6 @@ services:
       retries: 3
       start_period: 40s
 
-  frontend:
-    build:
-      context: ./markerplace
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
-    container_name: cryptogame-frontend
-    ports:
-      - "5173:3002"
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - cryptogame-network
-
 networks:
   cryptogame-network:
     driver: bridge

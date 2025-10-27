@@ -10,6 +10,9 @@ import marketplaceRoutes from './routes/marketplace.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Trust proxy - необхідно для роботи за nginx/reverse proxy
+app.set('trust proxy', 1);
+
 connectDB();
 
 // Middleware
@@ -29,11 +32,11 @@ const limiter = rateLimit({
   message: 'Занадто багато запитів з цієї IP адреси',
 });
 
-app.use('/api/', limiter);
+app.use(limiter);
 
-app.use('/api/auth', authRoutes);
-app.use('/api/tokens', tokenRoutes);
-app.use('/api/marketplace', marketplaceRoutes);
+app.use('/auth', authRoutes);
+app.use('/tokens', tokenRoutes);
+app.use('/marketplace', marketplaceRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ 
@@ -48,9 +51,9 @@ app.get('/', (req, res) => {
     message: 'CryptoGame Backend API',
     version: '1.0.0',
     endpoints: {
-      auth: '/api/auth',
-      tokens: '/api/tokens',
-      marketplace: '/api/marketplace',
+      auth: '/auth',
+      tokens: '/tokens',
+      marketplace: '/marketplace',
       health: '/health',
     },
   });

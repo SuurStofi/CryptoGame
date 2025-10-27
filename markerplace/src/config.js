@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const SOLANA_NETWORK = 'devnet';
 export const SOLANA_RPC_URL = 'https://api.devnet.solana.com';
