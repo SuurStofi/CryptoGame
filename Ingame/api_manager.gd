@@ -82,11 +82,11 @@ func get_user_info(auth_token: String) -> Dictionary:
 	var response = await request_completed
 	return response
 
-# POST /api/tokens/claim
-func claim_tokens(auth_token: String, token_type: String) -> Dictionary:
-	print("📡 Claiming tokens: ", token_type)
+# POST /api/tokens/mint
+func mint_tokens(auth_token: String, token_type: String) -> Dictionary:
+	print("📡 Minting tokens: ", token_type)
 	
-	var url = BASE_URL + "/tokens/claim"
+	var url = BASE_URL + "/tokens/mint"
 	var headers = [
 		"Content-Type: application/json",
 		"Authorization: Bearer " + auth_token
@@ -102,6 +102,10 @@ func claim_tokens(auth_token: String, token_type: String) -> Dictionary:
 	# Wait for response
 	var response = await request_completed
 	return response
+
+# Alias for backward compatibility
+func claim_tokens(auth_token: String, token_type: String) -> Dictionary:
+	return await mint_tokens(auth_token, token_type)
 
 # GET /api/tokens/balance/:walletAddress
 func get_token_balance(wallet_address: String) -> Dictionary:

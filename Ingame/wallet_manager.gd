@@ -379,3 +379,24 @@ func is_wallet_connected() -> bool:
 
 func get_auth_token() -> String:
 	return auth_token
+
+func mint_tokens(token_type: String) -> Dictionary:
+	"""
+	Мінтує токени для підключеного гаманця.
+	
+	Параметри:
+	- token_type: "APPLE_JUICE", "ORANGE_JUICE", або "GRAPE_SODA"
+	
+	Повертає: Dictionary з результатом операції
+	"""
+	if not is_connected:
+		print("❌ Wallet not connected")
+		return {"success": false, "error": "Wallet not connected"}
+	
+	if auth_token == "":
+		print("❌ Not authenticated")
+		return {"success": false, "error": "Not authenticated"}
+	
+	print("🪙 Minting tokens: ", token_type)
+	var result = await ApiManager.mint_tokens(auth_token, token_type)
+	return result
