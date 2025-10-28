@@ -3,6 +3,7 @@ import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
   createMintToInstruction,
+  createTransferInstruction,
   getAccount,
 } from '@solana/spl-token';
 import { getSolanaConnection, getAuthorityKeypair } from '../config/solana.js';
@@ -62,6 +63,47 @@ export const mintTokensToPlayer = async (mintAddress, playerAddress, amount) => 
   return signature;
 };
 
+export const transferFromEscrowToBuyer = async (mintAddress, buyerAddress, amount) => {
+  const connection = getSolanaConnection();
+  const authority = getAuthorityKeypair();
+  const mint = new PublicKey(mintAddress);
+  const buyer = new PublicKey(buyerAddress);
+
+  // Escrow ATA owned by authority
+  const { address: escrowAta } = await getOrCreateAssociatedTokenAccount(mint, authority.publicKey);
+  const { address: buyerAta, needsCreation } = await getOrCreateAssociatedTokenAccount(mint, buyer);
+
+  const transaction = new Transaction();
+
+  if (needsCreation) {
+    transaction.add(
+      createAssociatedTokenAccountInstruction(
+        authority.publicKey,
+        buyerAta,
+        buyer,
+        mint
+      )
+    );
+  }
+
+  transaction.add(
+    createTransferInstruction(
+      escrowAta,
+      buyerAta,
+      authority.publicKey,
+      amount * Math.pow(10, 9)
+    )
+  );
+
+  const signature = await sendAndConfirmTransaction(
+    connection,
+    transaction,
+    [authority]
+  );
+
+  return signature;
+};
+
 export const getTokenBalance = async (mintAddress, ownerAddress) => {
   try {
     const connection = getSolanaConnection();
@@ -75,6 +117,16 @@ export const getTokenBalance = async (mintAddress, ownerAddress) => {
   } catch (error) {
     return 0;
   }
+};
+
+export const getEscrowInfoForMint = async (mintAddress) => {
+  const authority = getAuthorityKeypair();
+  const mint = new PublicKey(mintAddress);
+  const { address } = await getOrCreateAssociatedTokenAccount(mint, authority.publicKey);
+  return {
+    escrowAuthority: authority.publicKey.toString(),
+    escrowTokenAccount: address.toString(),
+  };
 };
 
 export const isValidSolanaAddress = (address) => {

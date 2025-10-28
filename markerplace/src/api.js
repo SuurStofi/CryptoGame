@@ -83,6 +83,11 @@ export const marketplaceAPI = {
     const response = await api.get(`/marketplace/my-listings?status=${status}`);
     return response.data;
   },
+
+  getEscrowInfo: async (tokenType) => {
+    const response = await api.get(`/marketplace/escrow/${tokenType}`);
+    return response.data;
+  },
 };
 
 export default api;

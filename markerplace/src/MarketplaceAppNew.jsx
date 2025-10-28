@@ -166,10 +166,76 @@ const MarketplaceApp = () => {
       return;
     }
 
+    if (!publicKey) {
+      alert('Wallet not connected');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
       
+      // 1. Get escrow info for this token type
+      const escrowInfo = await marketplaceAPI.getEscrowInfo(selectedItem);
+      
+      // 2. Get mint address from config
+      const tokenMints = await (await fetch(`${API_BASE_URL}/marketplace/escrow/${selectedItem}`)).json();
+      const mintAddress = new PublicKey(tokenMints.tokenMint);
+      const escrowTokenAccount = new PublicKey(escrowInfo.escrowTokenAccount);
+      
+      // 3. Get seller's token account
+      const sellerTokenAccount = await getAssociatedTokenAddress(mintAddress, publicKey);
+      
+      // 4. Check if seller's token account exists
+      let sellerAccountInfo;
+      try {
+        sellerAccountInfo = await getAccount(connection, sellerTokenAccount);
+      } catch (error) {
+        alert('Token account not found. Please acquire this token first.');
+        return;
+      }
+      
+      // 5. Check balance
+      const amountInLamports = parseInt(sellAmount) * Math.pow(10, 9);
+      if (sellerAccountInfo.amount < BigInt(amountInLamports)) {
+        alert(`Insufficient balance. You have ${Number(sellerAccountInfo.amount) / Math.pow(10, 9)} tokens.`);
+        return;
+      }
+      
+      // 6. Create transfer transaction to escrow
+      const transaction = new Transaction();
+      
+      // Check if escrow account exists, create if needed
+      let escrowAccountInfo;
+      try {
+        escrowAccountInfo = await getAccount(connection, escrowTokenAccount);
+      } catch (error) {
+        // Escrow account doesn't exist, need to create it
+        // This should be done by backend authority, so we skip for now
+        console.warn('Escrow account may not exist, but proceeding...');
+      }
+      
+      // Add transfer instruction
+      transaction.add(
+        createTransferInstruction(
+          sellerTokenAccount,
+          escrowTokenAccount,
+          publicKey,
+          amountInLamports
+        )
+      );
+      
+      // 7. Send and confirm transaction
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = publicKey;
+      
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight });
+      
+      console.log('Tokens transferred to escrow:', signature);
+      
+      // 8. Create listing on backend
       const result = await marketplaceAPI.createListing(
         selectedItem,
         parseFloat(sellPrice),
@@ -189,7 +255,7 @@ const MarketplaceApp = () => {
       
     } catch (error) {
       console.error('Error creating listing:', error);
-      setError(error.response?.data?.error || 'Error creating listing');
+      setError(error.response?.data?.error || error.message || 'Error creating listing');
     } finally {
       setLoading(false);
     }
@@ -215,12 +281,12 @@ const MarketplaceApp = () => {
       
       const transaction = new Transaction();
       
-      // 1. Transfer SOL to seller
+      // 1. Transfer SOL to seller (lamports must be an integer)
       transaction.add(
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: new PublicKey(transactionDetails.seller),
-          lamports: transactionDetails.price * LAMPORTS_PER_SOL,
+          lamports: Math.round(transactionDetails.price * LAMPORTS_PER_SOL),
         })
       );
       
@@ -228,15 +294,15 @@ const MarketplaceApp = () => {
       // In reality, this should be done through an escrow smart contract
       
       // Get latest blockhash
-      const { blockhash } = await connection.getLatestBlockhash();
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
       
       // Sign and send transaction using wallet adapter
       const signature = await sendTransaction(transaction, connection);
       
-      // Wait for confirmation
-      await connection.confirmTransaction(signature);
+      // Wait for confirmation (use blockhash + lastValidBlockHeight to avoid API differences)
+      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight });
       
       // Confirm purchase on backend
       await marketplaceAPI.confirmPurchase(listing._id, signature);
@@ -572,8 +638,14 @@ const MarketplacePage = ({ listings, searchQuery, setSearchQuery, onBuy, current
 );
 
 const InventoryPage = ({ tokenBalances, onSell }) => {
+  const balanceKeyByType = {
+    APPLE_JUICE: 'appleJuice',
+    ORANGE_JUICE: 'orangeJuice',
+    GRAPE_SODA: 'grapeSoda',
+  };
+
   const availableItems = Object.entries(TOKEN_TYPES).filter(([key]) => {
-    const balance = tokenBalances[key.toLowerCase().replace('_', '')];
+    const balance = tokenBalances[balanceKeyByType[key]];
     return balance > 0;
   });
 
@@ -590,7 +662,7 @@ const InventoryPage = ({ tokenBalances, onSell }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {availableItems.map(([key, tokenType]) => {
-            const balance = tokenBalances[key.toLowerCase().replace('_', '')];
+            const balance = tokenBalances[balanceKeyByType[key]];
             return (
               <div key={key} className="bg-white border border-gray-200 rounded-lg p-6">
                 <div className="flex items-center gap-4 mb-4">
