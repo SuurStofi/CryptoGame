@@ -15,16 +15,21 @@ app.set('trust proxy', 1);
 
 connectDB();
 
-// Middleware
-const allowedOrigins = [
-  'http://localhost:8000',
-  process.env.FRONTEND_URL,
-];
-
 app.use(cors({
-  origin: '*',
-  credentials: true
+  origin: [
+    'https://marketplace.monster-cocktail.com',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:8000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Authorization']
 }));
+
+// Обробка preflight запитів перед rate limiter
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -5,6 +5,7 @@ import {
   createMintToInstruction,
   createTransferInstruction,
   getAccount,
+  getMint,
 } from '@solana/spl-token';
 import { getSolanaConnection, getAuthorityKeypair } from '../config/solana.js';
 
@@ -23,12 +24,41 @@ export const getOrCreateAssociatedTokenAccount = async (mint, owner) => {
   }
 };
 
+export const validateMintAuthority = async (mintAddress, authorityPublicKey) => {
+  const connection = getSolanaConnection();
+  const mint = new PublicKey(mintAddress);
+  
+  try {
+    const mintInfo = await getMint(connection, mint);
+    
+    // Если mint authority null, токен не может быть наминт
+    if (!mintInfo.mintAuthority) {
+      throw new Error(`Token mint ${mintAddress} has no mint authority (supply frozen)`);
+    }
+    
+    // Проверяем, что authority совпадает с mint authority
+    if (mintInfo.mintAuthority.toString() !== authorityPublicKey.toString()) {
+      throw new Error(`Authority ${authorityPublicKey.toString()} is not the mint authority for ${mintAddress}. Mint authority is ${mintInfo.mintAuthority.toString()}`);
+    }
+    
+    return true;
+  } catch (error) {
+    if (error.message.includes('Invalid public key')) {
+      throw new Error(`Invalid mint address: ${mintAddress}`);
+    }
+    throw error;
+  }
+};
+
 export const mintTokensToPlayer = async (mintAddress, playerAddress, amount) => {
   const connection = getSolanaConnection();
   const authority = getAuthorityKeypair();
   
   const mint = new PublicKey(mintAddress);
   const player = new PublicKey(playerAddress);
+  
+  // Валидация mint authority перед минтингом
+  await validateMintAuthority(mintAddress, authority.publicKey);
   
   const { address: tokenAccount, needsCreation } = await getOrCreateAssociatedTokenAccount(mint, player);
   

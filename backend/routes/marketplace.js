@@ -1,11 +1,10 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticateToken, optionalAuth } from '../middleware/auth.js';
-import { getTokenMints, TOKEN_NAMES } from '../config/solana.js';
+import { getTokenMints, TOKEN_NAMES, getAuthorityKeypair } from '../config/solana.js';
 import Listing from '../models/Listing.js';
 import User from '../models/User.js';
 import { mintTokensToPlayer, transferFromEscrowToBuyer, getTokenBalance, getEscrowInfoForMint } from '../utils/solana.js';
-import { getTokenMints } from '../config/solana.js';
 
 const router = express.Router();
 

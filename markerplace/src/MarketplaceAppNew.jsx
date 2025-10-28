@@ -43,7 +43,16 @@ const MarketplaceApp = () => {
   const [myListings, setMyListings] = useState([]);
 
   const handlePhantomAuth = async () => {
-    if (!publicKey || !signMessage) return;
+    if (!publicKey) {
+      setError('Wallet not connected');
+      return;
+    }
+    
+    if (!signMessage || typeof signMessage !== 'function') {
+      setError('Wallet does not support message signing. Please use a compatible wallet.');
+      disconnect();
+      return;
+    }
     
     try {
       setLoading(true);
@@ -140,7 +149,33 @@ const MarketplaceApp = () => {
   }, []);
 
   useEffect(() => {
-    if (connected && publicKey && !isLoggedIn && signMessage && backendStatus === 'online') {
+    // Check if there's a saved JWT token and restore session
+    const checkSavedSession = async () => {
+      const token = localStorage.getItem('jwt_token');
+      if (token && connected && publicKey) {
+        try {
+          const userData = await authAPI.getMe();
+          setUser(userData);
+          setIsLoggedIn(true);
+        } catch (error) {
+          // Token is invalid or expired, clear it
+          console.log('Session expired, clearing token');
+          localStorage.removeItem('jwt_token');
+          setIsLoggedIn(false);
+          setUser(null);
+        }
+      }
+    };
+
+    if (connected && publicKey && backendStatus === 'online') {
+      checkSavedSession();
+    }
+  }, [connected, publicKey, backendStatus]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('jwt_token');
+    // Only auto-auth if not logged in, no saved token, wallet is connected, and signMessage is available
+    if (connected && publicKey && !isLoggedIn && !token && signMessage && typeof signMessage === 'function' && backendStatus === 'online') {
       handlePhantomAuth();
     } else if (!connected && isLoggedIn) {
       handleLogout();
@@ -168,6 +203,13 @@ const MarketplaceApp = () => {
 
     if (!publicKey) {
       alert('Wallet not connected');
+      return;
+    }
+
+    // Check available balance
+    const availableBalance = getAvailableTokenBalance(selectedItem);
+    if (parseInt(sellAmount) > availableBalance) {
+      alert(`Insufficient available balance. You have ${availableBalance} available tokens (some may be listed).`);
       return;
     }
 
@@ -262,6 +304,16 @@ const MarketplaceApp = () => {
   };
 
   const handleBuyItem = async (listing) => {
+    if (!publicKey) {
+      alert("Wallet not connected");
+      return;
+    }
+    
+    if (!sendTransaction || typeof sendTransaction !== 'function') {
+      alert("Wallet does not support transactions. Please use a compatible wallet.");
+      return;
+    }
+    
     if (listing.seller === publicKey.toString()) {
       alert("You cannot buy your own listing!");
       return; 
@@ -315,7 +367,8 @@ const MarketplaceApp = () => {
       
     } catch (error) {
       console.error('Error purchasing:', error);
-      setError(error.response?.data?.error || error.message || 'Error during purchase');
+      const errorMessage = error.response?.data?.error || error.message || 'Error during purchase';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -355,6 +408,24 @@ const MarketplaceApp = () => {
       default:
         return 0;
     }
+  };
+
+  const getAvailableTokenBalance = (tokenType) => {
+    const totalBalance = getTokenBalance(tokenType);
+    
+    // Get token name for this token type
+    const tokenNameKey = Object.entries(TOKEN_TYPES).find(([key, value]) => value === tokenType)?.[0];
+    const tokenName = tokenNameKey ? TOKEN_NAMES[tokenNameKey] : null;
+    
+    if (!tokenName) return totalBalance;
+    
+    // Find total amount of this token type in active listings
+    const totalListed = myListings
+      .filter(listing => listing.tokenName === tokenName)
+      .reduce((sum, listing) => sum + listing.amount, 0);
+    
+    // Available balance = total balance - amount on listings
+    return totalBalance - totalListed;
   };
 
   return (
@@ -490,6 +561,7 @@ const MarketplaceApp = () => {
             {currentPage === 'inventory' && (
               <InventoryPage 
                 tokenBalances={tokenBalances}
+                myListings={myListings}
                 onSell={openSellModal}
               />
             )}
@@ -525,7 +597,7 @@ const MarketplaceApp = () => {
               />
               <div>
                 <h3 className="font-semibold text-gray-900">{TOKEN_NAMES[selectedItem]}</h3>
-                <p className="text-sm text-gray-500">Balance: {getTokenBalance(selectedItem)}</p>
+                <p className="text-sm text-gray-500">Available: {getAvailableTokenBalance(selectedItem)}</p>
               </div>
             </div>
 
@@ -534,7 +606,7 @@ const MarketplaceApp = () => {
               <input
                 type="number"
                 min="1"
-                max={getTokenBalance(selectedItem)}
+                max={getAvailableTokenBalance(selectedItem)}
                 value={sellAmount}
                 onChange={(e) => setSellAmount(e.target.value)}
                 placeholder="0"
@@ -637,16 +709,34 @@ const MarketplacePage = ({ listings, searchQuery, setSearchQuery, onBuy, current
   </div>
 );
 
-const InventoryPage = ({ tokenBalances, onSell }) => {
+const InventoryPage = ({ tokenBalances, myListings, onSell }) => {
   const balanceKeyByType = {
     APPLE_JUICE: 'appleJuice',
     ORANGE_JUICE: 'orangeJuice',
     GRAPE_SODA: 'grapeSoda',
   };
 
-  const availableItems = Object.entries(TOKEN_TYPES).filter(([key]) => {
-    const balance = tokenBalances[balanceKeyByType[key]];
-    return balance > 0;
+  const tokenTypeByValue = {};
+  Object.entries(TOKEN_TYPES).forEach(([key, value]) => {
+    tokenTypeByValue[value] = key;
+  });
+
+  const getAvailableBalance = (tokenType) => {
+    const balance = tokenBalances[balanceKeyByType[tokenTypeByValue[tokenType]]];
+    const tokenName = TOKEN_NAMES[tokenTypeByValue[tokenType]];
+    
+    // Find total amount of this token type in active listings
+    const totalListed = myListings
+      .filter(listing => listing.tokenName === tokenName)
+      .reduce((sum, listing) => sum + listing.amount, 0);
+    
+    // Available balance = total balance - amount on listings
+    return balance - totalListed;
+  };
+
+  const availableItems = Object.entries(TOKEN_TYPES).filter(([key, tokenType]) => {
+    const availableBalance = getAvailableBalance(tokenType);
+    return availableBalance > 0;
   });
 
   return (
@@ -662,7 +752,8 @@ const InventoryPage = ({ tokenBalances, onSell }) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {availableItems.map(([key, tokenType]) => {
-            const balance = tokenBalances[balanceKeyByType[key]];
+            const availableBalance = getAvailableBalance(tokenType);
+            const totalBalance = tokenBalances[balanceKeyByType[key]];
             return (
               <div key={key} className="bg-white border border-gray-200 rounded-lg p-6">
                 <div className="flex items-center gap-4 mb-4">
@@ -673,7 +764,10 @@ const InventoryPage = ({ tokenBalances, onSell }) => {
                   />
                   <div>
                     <h3 className="font-semibold text-gray-900">{TOKEN_NAMES[tokenType]}</h3>
-                    <p className="text-2xl font-bold text-gray-900">{balance}</p>
+                    <p className="text-2xl font-bold text-gray-900">{availableBalance}</p>
+                    {totalBalance > availableBalance && (
+                      <p className="text-xs text-gray-500">Total: {totalBalance}</p>
+                    )}
                   </div>
                 </div>
                 <button

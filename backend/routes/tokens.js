@@ -1,9 +1,21 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { getTokenMints } from '../config/solana.js';
 import { getTokenBalance, isValidSolanaAddress, mintTokensToPlayer } from '../utils/solana.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+
+const mintLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: 'Too many mint requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    return req.path.includes('/health') || req.path.includes('/balance');
+  }
+});
 
 router.get('/balance/:walletAddress', async (req, res) => {
   try {
@@ -35,8 +47,7 @@ router.get('/balance/:walletAddress', async (req, res) => {
   }
 });
 
-// Endpoint для видачі токенів
-router.post('/mint', authenticateToken, async (req, res) => {
+router.post('/mint', mintLimiter, authenticateToken, async (req, res) => {
   try {
     const { tokenType } = req.body;
     const walletAddress = req.user.walletAddress;
@@ -45,11 +56,17 @@ router.post('/mint', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Token type is required' });
     }
 
+    const normalizedTokenType = tokenType?.toUpperCase();
+    if (!['APPLE_JUICE', 'APPLE', 'ORANGE_JUICE', 'ORANGE', 'GRAPE_SODA', 'GRAPE'].includes(normalizedTokenType)) {
+      return res.status(400).json({ 
+        error: 'Invalid token type. Use: APPLE_JUICE, ORANGE_JUICE, or GRAPE_SODA' 
+      });
+    }
+
     const tokenMints = getTokenMints();
     
-    // Визначаємо mint адресу залежно від типу токена
     let mintAddress;
-    switch (tokenType?.toUpperCase()) {
+    switch (normalizedTokenType) {
       case 'APPLE_JUICE':
       case 'APPLE':
         mintAddress = tokenMints.APPLE_JUICE;
@@ -62,33 +79,51 @@ router.post('/mint', authenticateToken, async (req, res) => {
       case 'GRAPE':
         mintAddress = tokenMints.GRAPE_SODA;
         break;
-      default:
-        return res.status(400).json({ 
-          error: 'Invalid token type. Use: APPLE_JUICE, ORANGE_JUICE, or GRAPE_SODA' 
-        });
     }
 
     if (!mintAddress) {
       return res.status(500).json({ error: 'Token mint not configured' });
     }
 
-    // Видаємо 1 токен
+    console.log(`🪙 Minting request: ${tokenType} to ${walletAddress}`);
+    
     const signature = await mintTokensToPlayer(
       mintAddress.toString(),
       walletAddress,
       1
     );
 
+    console.log(`Mint successful: ${tokenType} to ${walletAddress}, signature: ${signature}`);
+
     res.json({
       success: true,
       signature,
       walletAddress,
-      tokenType,
+      tokenType: normalizedTokenType,
       amount: 1,
     });
   } catch (error) {
-    console.error('Mint error:', error);
-    res.status(500).json({ error: error.message || 'Server error' });
+    console.error('❌ Mint error:', error.message);
+    console.error('Stack:', error.stack);
+    
+    if (error.message.includes('mint authority')) {
+      return res.status(403).json({ 
+        error: 'Mint authority validation failed. Please contact support.',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+    
+    if (error.message.includes('Invalid mint address')) {
+      return res.status(400).json({ 
+        error: 'Invalid mint address. Token configuration error.',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Server error during minting',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
