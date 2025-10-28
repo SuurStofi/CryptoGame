@@ -103,15 +103,12 @@ const MarketplaceApp = () => {
     try {
       const walletAddress = publicKey.toString();
       
-      // Load token balances
       const { balances } = await tokensAPI.getBalance(walletAddress);
       setTokenBalances(balances);
-      
-      // Load SOL balance
+
       const balance = await connection.getBalance(publicKey);
       setSolBalance(balance / LAMPORTS_PER_SOL);
-      
-      // Load my listings
+
       const { listings } = await marketplaceAPI.getMyListings();
       setMyListings(listings);
       
@@ -133,7 +130,7 @@ const MarketplaceApp = () => {
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+        const response = await fetch(`${API_BASE_URL}/health`);
         if (response.ok) {
           setBackendStatus('online');
         } else {
@@ -149,7 +146,6 @@ const MarketplaceApp = () => {
   }, []);
 
   useEffect(() => {
-    // Check if there's a saved JWT token and restore session
     const checkSavedSession = async () => {
       const token = localStorage.getItem('jwt_token');
       if (token && connected && publicKey) {
@@ -158,7 +154,6 @@ const MarketplaceApp = () => {
           setUser(userData);
           setIsLoggedIn(true);
         } catch (error) {
-          // Token is invalid or expired, clear it
           console.log('Session expired, clearing token');
           localStorage.removeItem('jwt_token');
           setIsLoggedIn(false);
@@ -174,7 +169,6 @@ const MarketplaceApp = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('jwt_token');
-    // Only auto-auth if not logged in, no saved token, wallet is connected, and signMessage is available
     if (connected && publicKey && !isLoggedIn && !token && signMessage && typeof signMessage === 'function' && backendStatus === 'online') {
       handlePhantomAuth();
     } else if (!connected && isLoggedIn) {
@@ -206,7 +200,17 @@ const MarketplaceApp = () => {
       return;
     }
 
-    // Check available balance
+    if (!isLoggedIn) {
+      alert('Please authenticate first');
+      return;
+    }
+
+    const token = localStorage.getItem('jwt_token');
+    if (!token) {
+      alert('No authentication token found. Please reconnect your wallet.');
+      return;
+    }
+
     const availableBalance = getAvailableTokenBalance(selectedItem);
     if (parseInt(sellAmount) > availableBalance) {
       alert(`Insufficient available balance. You have ${availableBalance} available tokens (some may be listed).`);
@@ -217,18 +221,13 @@ const MarketplaceApp = () => {
       setLoading(true);
       setError('');
       
-      // 1. Get escrow info for this token type
       const escrowInfo = await marketplaceAPI.getEscrowInfo(selectedItem);
       
-      // 2. Get mint address from config
-      const tokenMints = await (await fetch(`${API_BASE_URL}/marketplace/escrow/${selectedItem}`)).json();
-      const mintAddress = new PublicKey(tokenMints.tokenMint);
+      const mintAddress = new PublicKey(escrowInfo.tokenMint);
       const escrowTokenAccount = new PublicKey(escrowInfo.escrowTokenAccount);
       
-      // 3. Get seller's token account
       const sellerTokenAccount = await getAssociatedTokenAddress(mintAddress, publicKey);
       
-      // 4. Check if seller's token account exists
       let sellerAccountInfo;
       try {
         sellerAccountInfo = await getAccount(connection, sellerTokenAccount);
@@ -237,67 +236,83 @@ const MarketplaceApp = () => {
         return;
       }
       
-      // 5. Check balance
       const amountInLamports = parseInt(sellAmount) * Math.pow(10, 9);
       if (sellerAccountInfo.amount < BigInt(amountInLamports)) {
         alert(`Insufficient balance. You have ${Number(sellerAccountInfo.amount) / Math.pow(10, 9)} tokens.`);
         return;
       }
       
-      // 6. Create transfer transaction to escrow
       const transaction = new Transaction();
       
-      // Check if escrow account exists, create if needed
       let escrowAccountInfo;
       try {
         escrowAccountInfo = await getAccount(connection, escrowTokenAccount);
       } catch (error) {
-        // Escrow account doesn't exist, need to create it
-        // This should be done by backend authority, so we skip for now
         console.warn('Escrow account may not exist, but proceeding...');
       }
       
-      // Add transfer instruction
       transaction.add(
         createTransferInstruction(
           sellerTokenAccount,
           escrowTokenAccount,
           publicKey,
-          amountInLamports
+          BigInt(amountInLamports)
         )
       );
       
-      // 7. Send and confirm transaction
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
       
-      const signature = await sendTransaction(transaction, connection);
-      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight });
+      const signature = await sendTransaction(transaction, connection, {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      });
+      
+      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
       
       console.log('Tokens transferred to escrow:', signature);
       
-      // 8. Create listing on backend
       const result = await marketplaceAPI.createListing(
         selectedItem,
         parseFloat(sellPrice),
         parseInt(sellAmount)
       );
       
-      alert('✅ Listing created successfully!');
+      alert('Listing created successfully!');
       
       setSelectedItem(null);
       setSellPrice('');
       setSellAmount('');
       setShowInventoryModal(false);
       
-      // Update data
       await loadUserData();
       await loadMarketListings();
       
     } catch (error) {
       console.error('Error creating listing:', error);
-      setError(error.response?.data?.error || error.message || 'Error creating listing');
+      
+      let errorMessage = 'Error creating listing';
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('jwt_token');
+        setIsLoggedIn(false);
+        setUser(null);
+        errorMessage = 'Your session has expired. Please reconnect your wallet.';
+        alert('Session expired. Please reconnect your wallet.');
+      } else if (error.toString().includes('User rejected')) {
+        errorMessage = 'Transaction was cancelled';
+      } else if (error.toString().includes('insufficient funds')) {
+        errorMessage = 'Insufficient SOL balance for transaction fee';
+      }
+      
+      setError(errorMessage);
+      if (error.response?.status !== 401) {
+        alert(`Failed to create listing: ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -319,8 +334,9 @@ const MarketplaceApp = () => {
       return; 
     }
     
-    if (solBalance < listing.price) {
-      alert("Insufficient SOL to purchase!");
+    const feeEstimate = 0.000005;
+    if (solBalance < listing.price + feeEstimate) {
+      alert(`Insufficient SOL to purchase! You need ${listing.price + feeEstimate} SOL (purchase + fee)`);
       return;
     }
 
@@ -328,13 +344,11 @@ const MarketplaceApp = () => {
       setLoading(true);
       setError('');
       
-      // Get transaction details
       const { transactionDetails } = await marketplaceAPI.initiateBuy(listing._id);
       
-      const transaction = new Transaction();
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       
-      // 1. Transfer SOL to seller (lamports must be an integer)
-      transaction.add(
+      const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: new PublicKey(transactionDetails.seller),
@@ -342,33 +356,38 @@ const MarketplaceApp = () => {
         })
       );
       
-      // 2. Receive SPL tokens (seller should do this separately)
-      // In reality, this should be done through an escrow smart contract
-      
-      // Get latest blockhash
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
       
-      // Sign and send transaction using wallet adapter
-      const signature = await sendTransaction(transaction, connection);
+      const signature = await sendTransaction(transaction, connection, {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      });
       
-      // Wait for confirmation (use blockhash + lastValidBlockHeight to avoid API differences)
-      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight });
+      await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
       
-      // Confirm purchase on backend
       await marketplaceAPI.confirmPurchase(listing._id, signature);
       
-      alert(`✅ Purchase successful!\nTransaction: ${signature.slice(0, 20)}...`);
+      alert(`Purchase successful!\nTransaction: ${signature.slice(0, 20)}...`);
       
-      // Update data
       await loadUserData();
       await loadMarketListings();
       
     } catch (error) {
       console.error('Error purchasing:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Error during purchase';
+      
+      let errorMessage = 'Error during purchase';
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      if (error.toString().includes('User rejected')) {
+        errorMessage = 'Transaction was cancelled';
+      } else if (error.toString().includes('insufficient funds')) {
+        errorMessage = 'Insufficient SOL balance';
+      }
+      
       setError(errorMessage);
+      alert(`Purchase failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -379,7 +398,7 @@ const MarketplaceApp = () => {
       setLoading(true);
       await marketplaceAPI.deleteListing(listingId);
       
-      alert('✅ Listing removed');
+      alert('Listing removed');
       
       await loadUserData();
       await loadMarketListings();
@@ -413,18 +432,14 @@ const MarketplaceApp = () => {
   const getAvailableTokenBalance = (tokenType) => {
     const totalBalance = getTokenBalance(tokenType);
     
-    // Get token name for this token type
     const tokenNameKey = Object.entries(TOKEN_TYPES).find(([key, value]) => value === tokenType)?.[0];
     const tokenName = tokenNameKey ? TOKEN_NAMES[tokenNameKey] : null;
     
     if (!tokenName) return totalBalance;
     
-    // Find total amount of this token type in active listings
     const totalListed = myListings
       .filter(listing => listing.tokenName === tokenName)
       .reduce((sum, listing) => sum + listing.amount, 0);
-    
-    // Available balance = total balance - amount on listings
     return totalBalance - totalListed;
   };
 
