@@ -36,7 +36,7 @@ func get_nonce(wallet_address: String) -> String:
 	var response = await request_completed
 	
 	if response.has("nonce"):
-		return response.nonce
+		return response["nonce"]
 	else:
 		print("❌ No nonce in response")
 		return ""
