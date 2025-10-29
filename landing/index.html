@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster Cocktail - Play-to-Earn Game on Solana</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #5B21B6 0%, #DD6B20 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-button {
+            background: linear-gradient(135deg, #5B21B6 0%, #DD6B20 100%);
+        }
+
+        .cocktail-shadow {
+            box-shadow: 0 4px 14px 0 rgba(91, 33, 182, 0.3);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .lang-active {
+            color: #a855f7;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white font-sans">
+    <!-- Header -->
+    <header class="container mx-auto px-4 py-6">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="logo.png" alt="Monster Cocktail" class="w-20 h-20 mr-4">
+                <div class="text-3xl font-bold gradient-bg">Monster Cocktail</div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#features" class="nav-link hover:text-purple-400 transition-colors" data-key="nav-features">Features</a>
+                    <a href="#how-it-works" class="nav-link hover:text-purple-400 transition-colors" data-key="nav-how">How It Works</a>
+                    <a href="#tokens" class="nav-link hover:text-purple-400 transition-colors" data-key="nav-tokens">Tokens</a>
+                    <a href="#about" class="nav-link hover:text-purple-400 transition-colors" data-key="nav-about">About</a>
+                </nav>
+                <div class="flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-md">
+                    <button onclick="changeLanguage('en')" class="lang-btn active text-sm px-2 py-1 rounded transition-colors lang-active">EN</button>
+                    <span class="text-gray-500">/</span>
+                    <button onclick="changeLanguage('uk')" class="lang-btn text-sm px-2 py-1 rounded transition-colors hover:text-purple-400">UK</button>
+                </div>
+            </div>
+            <button class="md:hidden focus:outline-none">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="py-20 px-4">
+        <div class="container mx-auto text-center">
+            <h1 class="text-5xl md:text-6xl font-bold mb-6"><span data-key="hero-catch">Catch Monsters</span>, <span class="gradient-bg" data-key="hero-create">Create Cocktails</span></h1>
+            <p class="text-xl md:text-2xl text-gray-300 mb-10 max-w-3xl mx-auto" data-key="hero-desc">
+                Play Monster Cocktail - an exciting game on Solana! Catch monsters, create powerful cocktails from them 
+                for boosts or sell them to other players for SOL!
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                <a href="https://app.monster-cocktail.com" target="_blank">
+                    <button class="gradient-button text-white font-bold px-8 py-4 rounded-lg hover:opacity-90 transition-opacity w-full sm:w-auto" data-key="btn-play-now">
+                        🎮 Play Now
+                    </button>
+                </a>
+                <a href="https://marketplace.monster-cocktail.com" target="_blank">
+                    <button class="bg-gray-800 text-white font-bold px-8 py-4 rounded-lg hover:bg-gray-700 transition-colors w-full sm:w-auto border border-gray-600" data-key="btn-marketplace">
+                        🛒 Marketplace
+                    </button>
+                </a>
+            </div>
+
+            <div class="max-w-5xl mx-auto mt-16 rounded-2xl overflow-hidden cocktail-shadow">
+                <img src="making_coctail.png" alt="Monster Cocktail Preview" class="w-full">
+            </div>
+        </div>
+    </section>
+
+    <!-- Tokens Section -->
+    <section id="tokens" class="py-20 px-4 bg-gray-800">
+        <div class="container mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16" data-key="tokens-title">Our Cocktail Tokens</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                <div class="bg-gray-900 p-8 rounded-xl cocktail-shadow float-animation">
+                    <div class="text-center mb-4">
+                        <img src="apple_cocktail.png" alt="Apple Juice" class="w-32 h-32 mx-auto object-contain">
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-center">Apple Juice</h3>
+                    <p class="text-gray-300 text-center" data-key="tokens-apple">Adds speed for faster movement across the location. Perfect for quick monster catching!</p>
+                    <div class="mt-4 text-center">
+                        <span class="inline-block bg-purple-600 px-3 py-1 rounded-full text-sm">⚡ Speed</span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 p-8 rounded-xl cocktail-shadow float-animation" style="animation-delay: 0.5s">
+                    <div class="text-center mb-4">
+                        <img src="orange_cocktail.png" alt="Orange Juice" class="w-32 h-32 mx-auto object-contain">
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-center">Orange Juice</h3>
+                    <p class="text-gray-300 text-center" data-key="tokens-orange">Increases jump height to reach hard-to-access places and monsters.</p>
+                    <div class="mt-4 text-center">
+                        <span class="inline-block bg-orange-600 px-3 py-1 rounded-full text-sm">🚀 High Jump</span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 p-8 rounded-xl cocktail-shadow float-animation" style="animation-delay: 1s">
+                    <div class="text-center mb-4">
+                        <img src="grape_cocktail.png" alt="Grape Soda" class="w-32 h-32 mx-auto object-contain">
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-center">Grape Soda</h3>
+                    <p class="text-gray-300 text-center" data-key="tokens-grape">Increases the number of monsters on the location. More monsters = more ingredients!</p>
+                    <div class="mt-4 text-center">
+                        <span class="inline-block bg-blue-600 px-3 py-1 rounded-full text-sm">👾 More Monsters</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 px-4">
+        <div class="container mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16" data-key="features-title">Why Monster Cocktail?</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                <div class="bg-gray-900 p-8 rounded-xl cocktail-shadow">
+                    <div class="text-purple-400 text-4xl mb-4">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4" data-key="features-p2e-title">Play-to-Earn</h3>
+                    <p class="text-gray-300" data-key="features-p2e">Catch monsters, create cocktails and earn SOL by selling them on the marketplace!</p>
+                </div>
+
+                <div class="bg-gray-900 p-8 rounded-xl cocktail-shadow">
+                    <div class="text-purple-400 text-4xl mb-4">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4" data-key="features-secure-title">Secure</h3>
+                    <p class="text-gray-300" data-key="features-secure">Tokens are stored on Solana blockchain. Guaranteed security of your assets.</p>
+                </div>
+
+                <div class="bg-gray-900 p-8 rounded-xl cocktail-shadow">
+                    <div class="text-purple-400 text-4xl mb-4">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4" data-key="features-econ-title">Economy</h3>
+                    <p class="text-gray-300" data-key="features-econ">Full marketplace for trading cocktails for SOL. Trade and earn!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="py-20 px-4 bg-gray-800">
+        <div class="container mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16" data-key="how-title">How It Works</h2>
+
+            <div class="flex flex-col md:flex-row items-center justify-between gap-16">
+                <div class="md:w-1/2">
+                    <div class="space-y-12">
+                        <div class="flex items-start">
+                            <div class="bg-purple-500 text-white rounded-full w-10 h-10 flex items-center justify-center mr-4 shrink-0">
+                                1
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold mb-2" data-key="how-step1-title">Catch Monsters</h3>
+                                <p class="text-gray-300" data-key="how-step1">Play the game and catch monsters to get ingredients for cocktails.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="bg-purple-500 text-white rounded-full w-10 h-10 flex items-center justify-center mr-4 shrink-0">
+                                2
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold mb-2" data-key="how-step2-title">Create Cocktails</h3>
+                                <p class="text-gray-300" data-key="how-step2">Use captured ingredients to create powerful boost cocktails.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start">
+                            <div class="bg-purple-500 text-white rounded-full w-10 h-10 flex items-center justify-center mr-4 shrink-0">
+                                3
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold mb-2" data-key="how-step3-title">Sell or Use</h3>
+                                <p class="text-gray-300" data-key="how-step3">Activate cocktails for boosts or sell them to other players for SOL on the marketplace!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:w-1/2">
+                    <div class="bg-gray-900 p-6 rounded-2xl cocktail-shadow">
+                        <img src="gameimg1.png" alt="Monster Cocktail Demo" class="w-full rounded-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About -->
+    <section id="about" class="py-20 px-4">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row items-center gap-16">
+                <div class="md:w-1/2">
+                    <h2 class="text-4xl font-bold mb-6" data-key="about-title">About The Project</h2>
+                    <p class="text-xl text-gray-300 mb-6" data-key="about-subtitle">
+                        Monster Cocktail is an exciting game on Solana with a full economy!
+                    </p>
+                    <p class="text-gray-300 mb-8" data-key="about-desc">
+                        Catch zombies, collect ingredients and create powerful cocktails! Use them for boosts 
+                        in the game or sell them on the marketplace to other players for SOL. Each cocktail is a unique token 
+                        on Solana blockchain with active trading and in-game use capabilities.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="bg-gray-800 px-4 py-2 rounded-full text-sm">🎮 Play-to-Earn</div>
+                        <div class="bg-gray-800 px-4 py-2 rounded-full text-sm">💰 NFT Tokens</div>
+                        <div class="bg-gray-800 px-4 py-2 rounded-full text-sm">📈 Marketplace</div>
+                        <div class="bg-gray-800 px-4 py-2 rounded-full text-sm">⚡ Solana</div>
+                    </div>
+                </div>
+
+                <div class="md:w-1/2">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="bg-gray-800 p-6 rounded-xl cocktail-shadow">
+                            <div class="text-purple-400 text-3xl mb-3">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2" data-key="about-spl-title">SPL Tokens</h3>
+                            <p class="text-sm text-gray-300" data-key="about-spl">Standard Solana tokens</p>
+                        </div>
+
+                        <div class="bg-gray-800 p-6 rounded-xl cocktail-shadow">
+                            <div class="text-purple-400 text-3xl mb-3">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2" data-key="about-escrow-title">Escrow System</h3>
+                            <p class="text-sm text-gray-300" data-key="about-escrow">Secure storage</p>
+                        </div>
+
+                        <div class="bg-gray-800 p-6 rounded-xl cocktail-shadow">
+                            <div class="text-purple-400 text-3xl mb-3">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2" data-key="about-market-title">Real-time Market</h3>
+                            <p class="text-sm text-gray-300" data-key="about-market">Live prices</p>
+                        </div>
+
+                        <div class="bg-gray-800 p-6 rounded-xl cocktail-shadow">
+                            <div class="text-purple-400 text-3xl mb-3">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2" data-key="about-mobile-title">Mobile Friendly</h3>
+                            <p class="text-sm text-gray-300" data-key="about-mobile">Works on all devices</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-4 bg-gray-800">
+        <div class="container mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-6" data-key="cta-title">Start Playing Now</h2>
+            <p class="text-xl text-gray-300 mb-10 max-w-2xl mx-auto" data-key="cta-desc">
+                Join Monster Cocktail! Catch monsters, create cocktails and earn SOL on the marketplace.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-6 justify-center">
+                <a href="https://app.monster-cocktail.com" target="_blank">
+                    <button class="gradient-button text-white font-bold px-8 py-4 rounded-lg hover:opacity-90 transition-opacity w-full sm:w-auto" data-key="btn-start-game">
+                        🎮 Start Game
+                    </button>
+                </a>
+                <a href="https://marketplace.monster-cocktail.com" target="_blank">
+                    <button class="bg-gray-900 text-white font-bold px-8 py-4 rounded-lg hover:bg-gray-800 transition-colors w-full sm:w-auto border border-gray-700" data-key="btn-marketplace2">
+                        🛒 Marketplace
+                    </button>
+                </a>
+            </div>
+            <p class="text-gray-400 mt-6 text-sm" data-key="cta-wallet">
+                Phantom Wallet required to connect to game and marketplace
+            </p>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-20 px-4">
+        <div class="container mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-16" data-key="faq-title">Frequently Asked Questions</h2>
+
+            <div class="max-w-3xl mx-auto space-y-6">
+                <div class="bg-gray-800 p-6 rounded-xl">
+                    <h3 class="text-xl font-bold mb-3" data-key="faq-1-title">How to play Monster Cocktail?</h3>
+                    <p class="text-gray-300" data-key="faq-1-answer">
+                        Connect Phantom Wallet to the game on app.monster-cocktail.com. Catch monsters, collect ingredients 
+                        and create cocktails for boosts or sell them on the marketplace for SOL!
+                    </p>
+                </div>
+
+                <div class="bg-gray-800 p-6 rounded-xl">
+                    <h3 class="text-xl font-bold mb-3" data-key="faq-2-title">What are cocktails and how to use them?</h3>
+                    <p class="text-gray-300" data-key="faq-2-answer">
+                        Cocktails are tokens on Solana that you can use as boosts in the game for 
+                        more efficient monster catching or sell to other players for SOL on the marketplace.
+                    </p>
+                </div>
+
+                <div class="bg-gray-800 p-6 rounded-xl">
+                    <h3 class="text-xl font-bold mb-3" data-key="faq-3-title">Can I earn SOL?</h3>
+                    <p class="text-gray-300" data-key="faq-3-answer">
+                        Yes! Caught monsters allow you to create unique cocktail-tokens that can be sold 
+                        to other players for SOL on the marketplace.
+                    </p>
+                </div>
+
+                <div class="bg-gray-800 p-6 rounded-xl">
+                    <h3 class="text-xl font-bold mb-3" data-key="faq-4-title">What network does the project use?</h3>
+                    <p class="text-gray-300" data-key="faq-4-answer">
+                        Monster Cocktail runs on Solana Devnet, allowing you to test functionality without real money.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-4 bg-gray-800">
+        <div class="container mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center">
+                        <img src="logo.png" alt="Monster Cocktail" class="w-16 h-16 mr-3">
+                        <div class="text-2xl font-bold gradient-bg">Monster Cocktail</div>
+                    </div>
+                    <p class="text-gray-400 mt-2" data-key="footer-desc">Game + Marketplace on Solana</p>
+                </div>
+
+                <div class="flex flex-wrap gap-8 mb-6 md:mb-0">
+                    <a href="#features" class="text-gray-300 hover:text-purple-400 transition-colors" data-key="footer-features">Features</a>
+                    <a href="#how-it-works" class="text-gray-300 hover:text-purple-400 transition-colors" data-key="footer-how">How It Works</a>
+                    <a href="#tokens" class="text-gray-300 hover:text-purple-400 transition-colors" data-key="footer-tokens">Tokens</a>
+                    <a href="#about" class="text-gray-300 hover:text-purple-400 transition-colors" data-key="footer-about">About</a>
+                </div>
+
+                <div class="flex gap-4">
+                    <a href="https://x.com/MonsterC0cktail" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-purple-400 transition-colors" title="X/Twitter">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                    </a>
+                    <a href="https://www.tiktok.com/@monstercocktails" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-purple-400 transition-colors" title="TikTok">
+                        <i class="fab fa-tiktok text-2xl"></i>
+                    </a>
+                    <a href="https://www.youtube.com/@MonsterCocktails" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-purple-400 transition-colors" title="YouTube">
+                        <i class="fab fa-youtube text-2xl"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center">
+                <p class="text-gray-500">© 2025 Monster Cocktail. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Translations
+        const translations = {
+            en: {
+                'nav-features': 'Features',
+                'nav-how': 'How It Works',
+                'nav-tokens': 'Tokens',
+                'nav-about': 'About',
+                'hero-catch': 'Catch Monsters',
+                'hero-create': 'Create Cocktails',
+                'hero-desc': 'Play Monster Cocktail - an exciting game on Solana! Catch monsters, create powerful cocktails from them for boosts or sell them to other players for SOL!',
+                'btn-play-now': '🎮 Play Now',
+                'btn-marketplace': '🛒 Marketplace',
+                'tokens-title': 'Our Cocktail Tokens',
+                'tokens-apple': 'Adds speed for faster movement across the location. Perfect for quick monster catching!',
+                'tokens-orange': 'Increases jump height to reach hard-to-access places and monsters.',
+                'tokens-grape': 'Increases the number of monsters on the location. More monsters = more ingredients!',
+                'features-title': 'Why Monster Cocktail?',
+                'features-p2e-title': 'Play-to-Earn',
+                'features-p2e': 'Catch monsters, create cocktails and earn SOL by selling them on the marketplace!',
+                'features-secure-title': 'Secure',
+                'features-secure': 'Tokens are stored on Solana blockchain. Guaranteed security of your assets.',
+                'features-econ-title': 'Economy',
+                'features-econ': 'Full marketplace for trading cocktails for SOL. Trade and earn!',
+                'how-title': 'How It Works',
+                'how-step1-title': 'Catch Monsters',
+                'how-step1': 'Play the game and catch monsters to get ingredients for cocktails.',
+                'how-step2-title': 'Create Cocktails',
+                'how-step2': 'Use captured ingredients to create powerful boost cocktails.',
+                'how-step3-title': 'Sell or Use',
+                'how-step3': 'Activate cocktails for boosts or sell them to other players for SOL on the marketplace!',
+                'about-title': 'About The Project',
+                'about-subtitle': 'Monster Cocktail is an exciting game on Solana with a full economy!',
+                'about-desc': 'Catch monsters, collect ingredients and create powerful cocktails! Use them for boosts in the game or sell them on the marketplace to other players for SOL. Each cocktail is a unique token on Solana blockchain with active trading and in-game use capabilities.',
+                'about-spl-title': 'SPL Tokens',
+                'about-spl': 'Standard Solana tokens',
+                'about-escrow-title': 'Escrow System',
+                'about-escrow': 'Secure storage',
+                'about-market-title': 'Real-time Market',
+                'about-market': 'Live prices',
+                'about-mobile-title': 'Mobile Friendly',
+                'about-mobile': 'Works on all devices',
+                'cta-title': 'Start Playing Now',
+                'cta-desc': 'Join Monster Cocktail! Catch monsters, create cocktails and earn SOL on the marketplace.',
+                'btn-start-game': '🎮 Start Game',
+                'btn-marketplace2': '🛒 Marketplace',
+                'cta-wallet': 'Phantom Wallet required to connect to game and marketplace',
+                'faq-title': 'Frequently Asked Questions',
+                'faq-1-title': 'How to play Monster Cocktail?',
+                'faq-1-answer': 'Connect Phantom Wallet to the game on app.monster-cocktail.com. Catch monsters, collect ingredients and create cocktails for boosts or sell them on the marketplace for SOL!',
+                'faq-2-title': 'What are cocktails and how to use them?',
+                'faq-2-answer': 'Cocktails are tokens on Solana that you can use as boosts in the game for more efficient monster catching or sell to other players for SOL on the marketplace.',
+                'faq-3-title': 'Can I earn SOL?',
+                'faq-3-answer': 'Yes! Caught monsters allow you to create unique cocktail-tokens that can be sold to other players for SOL on the marketplace.',
+                'faq-4-title': 'What network does the project use?',
+                'faq-4-answer': 'Monster Cocktail runs on Solana Devnet, allowing you to test functionality without real money.',
+                'footer-desc': 'Game + Marketplace on Solana',
+                'footer-features': 'Features',
+                'footer-how': 'How It Works',
+                'footer-tokens': 'Tokens',
+                'footer-about': 'About'
+            },
+            uk: {
+                'nav-features': 'Функції',
+                'nav-how': 'Як це працює',
+                'nav-tokens': 'Токени',
+                'nav-about': 'Про проект',
+                'hero-catch': 'Ловіть Монстрів',
+                'hero-create': 'Створюйте Коктейлі',
+                'hero-desc': 'Грайте в Monster Cocktail - захоплюючу гру на Solana! Ловіть монстрів, створюйте з них потужні коктейлі для бустів або продавайте їх іншим гравцям за SOL!',
+                'btn-play-now': '🎮 Грати Зараз',
+                'btn-marketplace': '🛒 Маркетплейс',
+                'tokens-title': 'Наші Токени-Коктейлі',
+                'tokens-apple': 'Додає швидкості для швидшого переміщення по локації. Ідеальний для швидкого ловлення!',
+                'tokens-orange': 'Збільшує висоту стрибка для досягнення важкодоступних місць та монстрів.',
+                'tokens-grape': 'Збільшує кількість монстрів на локації. Більше монстрів = більше інгредієнтів!',
+                'features-title': 'Чому Monster Cocktail?',
+                'features-p2e-title': 'Play-to-Earn',
+                'features-p2e': 'Ловіть монстрів, створюйте коктейлі та заробіть SOL, продаючи їх на маркетплейсі!',
+                'features-secure-title': 'Безпечно',
+                'features-secure': 'Токени зберігаються на Solana blockchain. Гарантована безпека ваших активів.',
+                'features-econ-title': 'Економіка',
+                'features-econ': 'Повноцінний маркетплейс для торгівлі коктейлями за SOL. Торгуйте та заробляйте!',
+                'how-title': 'Як Це Працює',
+                'how-step1-title': 'Ловіть Монстрів',
+                'how-step1': 'Грайте в гру та ловіть монстрів, щоб отримати інгредієнти для коктейлів.',
+                'how-step2-title': 'Створюйте Коктейлі',
+                'how-step2': 'Використовуйте зловлені інгредієнти для створення потужних коктейлів-бустів.',
+                'how-step3-title': 'Продавайте або Використовуйте',
+                'how-step3': 'Активуйте коктейлі для бустів або продавайте їх іншим гравцям за SOL на маркетплейсі!',
+                'about-title': 'Про Проект',
+                'about-subtitle': 'Monster Cocktail - це захоплююча гра на Solana з повноцінною економікою!',
+                'about-desc': 'Ловіть монстрів, збирайте інгредієнти та створюйте потужні коктейлі! Використовуйте їх для бустів в грі або продавайте на маркетплейсі іншим гравцям за SOL. Кожен коктейль - це унікальний токен на Solana blockchain з можливістю активної торгівлі та використання в грі.',
+                'about-spl-title': 'SPL Tokens',
+                'about-spl': 'Стандартні токени Solana',
+                'about-escrow-title': 'Escrow System',
+                'about-escrow': 'Безпечне зберігання',
+                'about-market-title': 'Real-time Market',
+                'about-market': 'Актуальні ціни',
+                'about-mobile-title': 'Mobile Friendly',
+                'about-mobile': 'Працює на всіх пристроях',
+                'cta-title': 'Почніть Грати Зараз',
+                'cta-desc': 'Приєднуйтесь до Monster Cocktail! Ловіть монстрів, створюйте коктейлі та заробіть SOL на маркетплейсі.',
+                'btn-start-game': '🎮 Почати Гру',
+                'btn-marketplace2': '🛒 Маркетплейс',
+                'cta-wallet': 'Потрібен Phantom Wallet для підключення до гри та маркетплейсу',
+                'faq-title': 'Часті Запитання',
+                'faq-1-title': 'Як грати в Monster Cocktail?',
+                'faq-1-answer': 'Підключіть Phantom Wallet до гри на app.monster-cocktail.com. Ловіть монстрів, збирайте інгредієнти та створюйте коктейлі для бустів або продавайте їх на маркетплейсі за SOL!',
+                'faq-2-title': 'Що таке коктейлі і як їх використовувати?',
+                'faq-2-answer': 'Коктейлі - це токени на Solana, які ви можете використовувати як бусти в грі для ефективнішого ловлення монстрів або продати іншим гравцям за SOL на маркетплейсі.',
+                'faq-3-title': 'Чи можу я заробляти SOL?',
+                'faq-3-answer': 'Так! Зловлені монстри дозволяють створювати унікальні коктейлі-токени, які можна продавати іншим гравцям за SOL на маркетплейсі.',
+                'faq-4-title': 'Яку мережу використовує проект?',
+                'faq-4-answer': 'Monster Cocktail працює на Solana Devnet, що дозволяє тестувати функціонал без реальних коштів.',
+                'footer-desc': 'Гра + Маркетплейс на Solana',
+                'footer-features': 'Функції',
+                'footer-how': 'Як Це Працює',
+                'footer-tokens': 'Токени',
+                'footer-about': 'Про Проект'
+            }
+        };
+
+        let currentLang = 'en';
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.setAttribute('lang', lang);
+            
+            // Update button states
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('lang-active');
+                if (btn.textContent.trim() === (lang === 'en' ? 'EN' : 'UK')) {
+                    btn.classList.add('lang-active');
+                }
+            });
+
+            // Update all elements with data-key
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.getAttribute('data-key');
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+        }
+
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuButton = document.querySelector('button');
+            const nav = document.querySelector('nav');
+
+            if (menuButton) {
+                menuButton.addEventListener('click', function () {
+                    nav.classList.toggle('hidden');
+                    nav.classList.toggle('flex');
+                    nav.classList.toggle('flex-col');
+                    nav.classList.toggle('absolute');
+                    nav.classList.toggle('top-20');
+                    nav.classList.toggle('right-4');
+                    nav.classList.toggle('bg-gray-900');
+                    nav.classList.toggle('p-4');
+                    nav.classList.toggle('rounded-lg');
+                    nav.classList.toggle('shadow-lg');
+                });
+            }
+
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
