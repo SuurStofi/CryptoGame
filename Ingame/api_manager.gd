@@ -107,6 +107,30 @@ func mint_tokens(auth_token: String, token_type: String) -> Dictionary:
 func claim_tokens(auth_token: String, token_type: String) -> Dictionary:
 	return await mint_tokens(auth_token, token_type)
 
+# POST /api/tokens/burn
+func burn_tokens(auth_token: String, token_type: String, amount: int = 1) -> Dictionary:
+	print("📡 Burning tokens: ", token_type, " x", amount)
+	
+	var url = BASE_URL + "/tokens/burn"
+	var headers = [
+		"Content-Type: application/json",
+		"Authorization: Bearer " + auth_token
+	]
+	var body = JSON.stringify({
+		"tokenType": token_type,
+		"amount": amount
+	})
+	
+	var error = http_client.request(url, headers, HTTPClient.METHOD_POST, body)
+	
+	if error != OK:
+		print("❌ HTTP Request failed: ", error)
+		return {}
+	
+	# Wait for response
+	var response = await request_completed
+	return response
+
 # GET /api/tokens/balance/:walletAddress
 func get_token_balance(wallet_address: String) -> Dictionary:
 	print("📡 Fetching token balance for: ", wallet_address)

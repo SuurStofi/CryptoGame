@@ -137,6 +137,51 @@ func claim_tokens(token_type: String):
 		else:
 			print("❌ Failed to claim tokens")
 
+# Consume/burn tokens when processing drinks
+func consume_tokens(cocktail_name: String, amount: int = 1) -> bool:
+	if not is_authenticated:
+		print("⚠️ Cannot consume tokens - not authenticated")
+		return false
+	
+	# Map cocktail names back to token types
+	var token_type = _get_token_type_from_cocktail(cocktail_name)
+	if token_type == "":
+		print("⚠️ Unknown cocktail type: ", cocktail_name)
+		return false
+	
+	# Check if we have enough tokens
+	var current_balance = token_balances.get(token_type, 0)
+	if current_balance < amount:
+		print("⚠️ Not enough tokens: have ", current_balance, ", need ", amount)
+		return false
+	
+	print("🔥 Consuming tokens: ", token_type, " x", amount)
+	var result = await ApiManager.burn_tokens(auth_token, token_type, amount)
+	
+	if result.has("success") and result["success"]:
+		print("✅ Tokens consumed successfully!")
+		if result.has("signature"):
+			print("🔗 Transaction: ", result["signature"])
+		
+		# Refresh balances from blockchain - this will also sync inventory
+		await fetch_token_balances()
+		return true
+	else:
+		if result.has("message"):
+			print("❌ Failed to consume tokens: ", result["message"])
+		else:
+			print("❌ Failed to consume tokens")
+		return false
+
+# Helper function to convert cocktail name to token type
+func _get_token_type_from_cocktail(cocktail_name: String) -> String:
+	var reverse_map = {
+		"Basic Juice": "APPLE_JUICE",
+		"Double Mix": "ORANGE_JUICE",
+		"Triple Blast": "GRAPE_SODA"
+	}
+	return reverse_map.get(cocktail_name, "")
+
 # Fetch token balances from blockchain
 func fetch_token_balances():
 	if wallet_address == "":
@@ -181,28 +226,46 @@ func _sync_inventory_with_balances():
 		"GRAPE_SODA": "Triple Blast"
 	}
 	
-	# Clear current cocktail inventory
-	# Note: This assumes GlobalInventory has a way to set counts directly
-	# If not, you may need to adjust this based on your GlobalInventory implementation
-	
 	for token_type in token_balances:
 		var balance = token_balances[token_type]
-		if cocktail_map.has(token_type) and balance > 0:
-			var cocktail_name = cocktail_map[token_type]
+		var cocktail_name = cocktail_map.get(token_type, "")
+		
+		if cocktail_name == "":
+			continue
+		
+		# Get current inventory count for this cocktail
+		var current_count = GlobalInventory.get_cocktail_count(cocktail_name)
+		
+		# Sync inventory to match blockchain balance
+		if balance > current_count:
+			# Blockchain has MORE - add the difference
+			var diff = balance - current_count
+			for i in range(diff):
+				GlobalInventory.add_cocktail(cocktail_name)
+			print("🍹 Synced ", cocktail_name, ": added ", diff, " (now ", balance, ")")
 			
-			# Get current inventory count for this cocktail
-			var current_count = GlobalInventory.get_cocktail_count(cocktail_name)
+		elif balance < current_count:
+			# Blockchain has LESS - remove the difference
+			var diff = current_count - balance
 			
-			# Add the difference to sync up
-			if balance > current_count:
-				var diff = balance - current_count
+			# Check if GlobalInventory has a remove function
+			if GlobalInventory.has_method("remove_cocktail"):
 				for i in range(diff):
-					GlobalInventory.add_cocktail(cocktail_name)
-				print("🍹 Synced ", cocktail_name, ": added ", diff, " (now ", balance, ")")
-			elif balance < current_count:
-				# If blockchain has less than inventory, inventory is ahead
-				# This shouldn't normally happen but log it
-				print("⚠️ Warning: Inventory has more ", cocktail_name, " than blockchain (", current_count, " vs ", balance, ")")
+					GlobalInventory.remove_cocktail(cocktail_name)
+				print("🍹 Synced ", cocktail_name, ": removed ", diff, " (now ", balance, ")")
+			else:
+				# If no remove method, try to set directly
+				if GlobalInventory.has_method("set_cocktail_count"):
+					GlobalInventory.set_cocktail_count(cocktail_name, balance)
+					print("🍹 Synced ", cocktail_name, ": set to ", balance)
+				else:
+					print("⚠️ Warning: Cannot sync down. Inventory has more ", cocktail_name, " than blockchain (", current_count, " vs ", balance, ")")
+					print("   Please add a remove_cocktail() or set_cocktail_count() method to GlobalInventory")
+		else:
+			# Already in sync
+			if balance > 0:
+				print("✅ ", cocktail_name, " already in sync: ", balance)
+
 
 
 # Helper to get display name for token type
