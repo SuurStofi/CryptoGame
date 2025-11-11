@@ -9,14 +9,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         .gradient-bg {
-            background: linear-gradient(135deg, #5B21B6 0%, #DD6B20 100%);
+            background: linear-gradient(135deg, #8B5CF6 0%, #10B981 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
         .gradient-button {
-            background: linear-gradient(135deg, #5B21B6 0%, #DD6B20 100%);
+            background: linear-gradient(135deg, #8B5CF6 0%, #10B981 100%);
         }
 
         .cocktail-shadow {
@@ -57,7 +57,7 @@
                 <div class="flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-md">
                     <button onclick="changeLanguage('en')" class="lang-btn active text-sm px-2 py-1 rounded transition-colors lang-active">EN</button>
                     <span class="text-gray-500">/</span>
-                    <button onclick="changeLanguage('uk')" class="lang-btn text-sm px-2 py-1 rounded transition-colors hover:text-purple-400">UK</button>
+                    <button onclick="changeLanguage('ua')" class="lang-btn text-sm px-2 py-1 rounded transition-colors hover:text-purple-400">UA</button>
                 </div>
             </div>
             <button class="md:hidden focus:outline-none">
@@ -515,7 +515,7 @@
             // Update button states
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.remove('lang-active');
-                if (btn.textContent.trim() === (lang === 'en' ? 'EN' : 'UK')) {
+                if (btn.textContent.trim() === (lang === 'en' ? 'EN' : 'UA')) {
                     btn.classList.add('lang-active');
                 }
             });
