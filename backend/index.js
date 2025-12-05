@@ -22,6 +22,7 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:8000',
     'https://app.monster-cocktail.com',
+    'https://demo.monster-cocktail.com',
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
